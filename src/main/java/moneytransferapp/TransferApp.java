@@ -4,6 +4,7 @@ package moneytransferapp;
 import io.temporal.api.common.v1.WorkflowExecution;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
+import io.temporal.client.WorkflowStub;
 import io.temporal.serviceclient.WorkflowServiceStubs;
 
 import java.security.SecureRandom;
@@ -13,6 +14,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.CompletableFuture;
 
 public class TransferApp {
     private static final SecureRandom random;
@@ -45,13 +47,13 @@ public class TransferApp {
         // A WorkflowId prevents duplicate instances, which are removed.
         WorkflowOptions options = WorkflowOptions.newBuilder()
                 .setTaskQueue(Shared.MONEY_TRANSFER_TASK_QUEUE)
-                .setWorkflowId("money-transfer-workflow")
+                .setWorkflowId("money-transfer-workflow-8")
                 .build();
 
         // WorkflowStubs enable calls to methods as if the Workflow object is local
         // but actually perform a gRPC call to the Temporal Service.
-        MoneyTransferWorkflow workflow = client.newWorkflowStub(MoneyTransferWorkflow.class, options);
-        
+        WorkflowStub workflow = client.newUntypedWorkflowStub("MoneyTransferWorkflow", options);
+
         // Configure the details for this money transfer request
         String referenceId = UUID.randomUUID().toString().substring(0, 18);
         String fromAccount = randomAccountIdentifier();
@@ -61,13 +63,15 @@ public class TransferApp {
 
         // Perform asynchronous execution.
         // This process exits after making this call and printing details.
-        WorkflowExecution we = WorkflowClient.start(workflow::transfer, transaction);
+	workflow.start(transaction);
 
         System.out.printf("\nMONEY TRANSFER PROJECT\n\n");
         System.out.printf("Initiating transfer of $%d from [Account %s] to [Account %s].\n\n",
                           amountToTransfer, fromAccount, toAccount);
-        System.out.printf("[WorkflowID: %s]\n[RunID: %s]\n[Transaction Reference: %s]\n\n", we.getWorkflowId(), we.getRunId(), referenceId);
-        System.exit(0);
+	System.out.printf("Waiting for result...\n");
+	CompletableFuture<String> fut = workflow.getResultAsync(String.class);
+	System.out.printf("Got %s\n", fut.get());
+        // System.exit(0); // let JVM exit when finished
     }
 }
 // @@@SNIPEND

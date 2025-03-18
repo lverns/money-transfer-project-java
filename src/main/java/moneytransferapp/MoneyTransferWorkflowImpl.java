@@ -43,7 +43,7 @@ public class MoneyTransferWorkflowImpl implements MoneyTransferWorkflow {
     // The transfer method is the entry point to the Workflow
     // Activity method executions can be orchestrated here or from within other Activity methods
     @Override
-    public void transfer(TransactionDetails transaction) {
+    public String transfer(TransactionDetails transaction) {
         // Retrieve transaction information from the `transaction` instance
         String sourceAccountId = transaction.getSourceAccountId();
         String destinationAccountId = transaction.getDestinationAccountId();
@@ -60,7 +60,7 @@ public class MoneyTransferWorkflowImpl implements MoneyTransferWorkflow {
             System.out.flush();
 
             // Transaction ends here
-            return;
+            return "Transfer complete";
         }
 
         // Stage 2: Deposit funds to destination
@@ -73,7 +73,7 @@ public class MoneyTransferWorkflowImpl implements MoneyTransferWorkflow {
             System.out.flush();
 
             //  Transaction ends here
-            return;
+            return "Transfer complete";
         } catch (Exception e) {
             // If the deposit fails, for any exception, it's caught here
             System.out.printf("[%s] Deposit of $%d to account %s failed.\n", transactionReferenceId, amountToTransfer, destinationAccountId);
@@ -92,7 +92,7 @@ public class MoneyTransferWorkflowImpl implements MoneyTransferWorkflow {
             // Recovery successful. Transaction ends here
             System.out.printf("[%s] Refund to originating account was successful.\n", transactionReferenceId);
             System.out.printf("[%s] Transaction is complete. No transfer made.\n", transactionReferenceId);
-            return;
+            return "Transfer Complete";
         } catch (Exception e) {
             // A recovery mechanism can fail too. Handle any exception here
             System.out.printf("[%s] Deposit of $%d to account %s failed. Did not compensate withdrawal.\n",
